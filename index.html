@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "সূর্যের UV বিকিরণের ক্ষতিকর প্রভাব থেকে সুরক্ষা দেয়-",
+          options: {
+            A: "স্ট্রাটোস্ফিয়ারে (stratosphere) থাকা ওজোনস্তর (O3)",
+            B: "আয়নমণ্ডল (ionsphere) ও ট্রোপোমণ্ডল (troposphere) এ থাকা ওজোনস্তর (O3)",
+            C: "আয়নমণ্ডলে (ionsphere) থাকা ওজোনস্তর (O3)",
+            D: "ট্রোপমণ্ডলে (troposphere) থাকা মেঘমালা",
+          },
+          correct: "A",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ারে বিদ্যমান ওজোনস্তর (O<sub>3</sub>) সূর্যের ক্ষতিকারক অতিবেগুনি রশ্মি শোষণ করে পৃথিবীতে আসতে বাধা দেয়। এটি পৃথিবীর জীবজগৎকে সূর্যের অতিবেগুনি বিকিরণের ক্ষতিকর প্রভাব থেকে রক্ষা করে। এই স্তরটি ভূপৃষ্ঠ থেকে প্রায় ১৫-৫০ কিলোমিটার উচ্চতায় অবস্থিত।</p>",
+        },
+        {
+          id: 2,
+          question: "বায়ুমণ্ডলের কোন স্তরে ঘূর্ণিঝড়ের উৎপত্তি হয়?",
+          options: {
+            A: "আয়োনোস্ফিয়ার",
+            B: "ট্রপোস্ফিয়ার",
+            C: "মেসোস্ফিয়ার",
+            D: "স্ট্র্যাটোস্ফিয়ার",
+          },
+          correct: "B",
+          explanation:
+            "<p>ট্রপোস্ফিয়ার হলো বায়ুমণ্ডলের সবচেয়ে নিচের স্তর, যা ভূপৃষ্ঠ থেকে প্রায় ০-১৮ কিমি পর্যন্ত বিস্তৃত। এই স্তরেই মেঘ, বৃষ্টি, ঝড়, বজ্রপাত, ঘূর্ণিঝড় সহ আবহাওয়ার সকল ঘটনা ঘটে। এই স্তরে উচ্চতা বৃদ্ধির সাথে সাথে তাপমাত্রা হ্রাস পায়।</p>",
+        },
+        {
+          id: 3,
+          question: "বায়ুমণ্ডলের স্ট্র্যাটোস্ফিয়ার স্তরের মূল উপাদান কোনটি?",
+          options: {
+            A: "অক্সিজেন",
+            B: "নিওন",
+            C: "কার্বন ডাইঅক্সাইড",
+            D: "ওজোন",
+          },
+          correct: "D",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ার বায়ুমণ্ডলের দ্বিতীয় স্তর, যা ভূপৃষ্ঠ থেকে প্রায় ১৮-৫০ কিলোমিটার পর্যন্ত বিস্তৃত। এই স্তরের অন্যতম প্রধান উপাদান হলো ওজোন (O<sub>3</sub>) গ্যাস। এই ওজোন স্তর সূর্যের অতিবেগুনি রশ্মি শোষণ করে পৃথিবীর জীবজগৎকে রক্ষা করে।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "ভূপৃষ্ঠ থেকে পাঠানো বেতার তরঙ্গ, বায়ুমণ্ডলের কোন স্তরে বাধা পেয়ে পুনরায় পৃথিবীতে ফিরে আসে?",
+          options: {
+            A: "এক্সোস্ফিয়ার",
+            B: "আয়োনোস্ফিয়ার",
+            C: "ম্যাগনেটোস্ফিয়ার",
+            D: "মেসোস্ফিয়ার",
+          },
+          correct: "B",
+          explanation:
+            "<p>আয়নোস্ফিয়ার হলো বায়ুমণ্ডলের একটি স্তর যেখানে প্রচুর পরিমাণে আয়ন ও ইলেকট্রন থাকে। এই স্তরের উচ্চতা প্রায় ৮০-৫০০ কিলোমিটার। এই আয়নিত কণাগুলো বেতার তরঙ্গকে প্রতিফলিত করে পৃথিবীতে ফিরিয়ে আনতে সাহায্য করে, যা রেডিও যোগাযোগে গুরুত্বপূর্ণ ভূমিকা রাখে।</p>",
+        },
+        {
+          id: 5,
+          question: "সূর্যের অতিবেগুনি রশ্মি শোষণ করতে পারে নিম্নের কোনটি?",
+          options: {
+            A: "O<sub>2</sub>",
+            B: "NO<sub>2</sub>",
+            C: "CFCl<sub>3</sub>",
+            D: "O<sub>3</sub>",
+          },
+          correct: "D",
+          explanation:
+            "<p>ওজোন (O<sub>3</sub>) গ্যাস সূর্যের অতিবেগুনি (UV) রশ্মিকে কার্যকরভাবে শোষণ করে। ওজোন স্তর, যা স্ট্র্যাটোস্ফিয়ারে অবস্থিত, এই শোষণ প্রক্রিয়ার মাধ্যমে পৃথিবীর জীবজগৎকে সূর্যের ক্ষতিকর বিকিরণ থেকে রক্ষা করে।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "বায়ুমণ্ডল দ্বারা তাপ অপরিবাহী মণ্ডল সৃষ্টির কারণেই পৃথিবীর বর্তমান গড় তাপমাত্রা নিম্নের কত °C?",
+          options: {
+            A: "20",
+            B: "10",
+            C: "15",
+            D: "25",
+          },
+          correct: "C",
+          explanation:
+            "<p>বায়ুমণ্ডলে গ্রিনহাউস গ্যাসগুলোর উপস্থিতির কারণে একটি প্রাকৃতিক গ্রিনহাউস প্রভাব তৈরি হয়। এই প্রভাবের কারণে পৃথিবী থেকে নির্গত তাপ বায়ুমণ্ডল দ্বারা আটকে যায়, যার ফলে পৃথিবীর গড় তাপমাত্রা প্রায় ১৫°C এ থাকে। এই তাপমাত্রা পৃথিবীর জীবন ধারণের জন্য উপযোগী।</p>",
+        },
+        {
+          id: 7,
+          question: "বায়ুমণ্ডলের হোমোস্ফিয়ারে নিচের কোনটি থাকে না?",
+          options: {
+            A: "আর্গন",
+            B: "O<sub>2</sub>",
+            C: "O<sub>3</sub>",
+            D: "CH<sub>4</sub>",
+          },
+          correct: "D",
+          explanation:
+            "<p>হোমোস্ফিয়ার হলো বায়ুমণ্ডলের নিচের অংশ, যেখানে গ্যাসের অনুপাত প্রায় একই থাকে। এই স্তরে আর্গন, অক্সিজেন (O<sub>2</sub>), এবং ওজোন (O<sub>3</sub>) এর মতো গ্যাসগুলো সুষমভাবে মিশ্রিত থাকে। মিথেন (CH<sub>4</sub>) এর পরিমাণ হোমোস্ফিয়ারে খুবই নগণ্য।</p>",
+        },
+        {
+          id: 8,
+          question: "বায়ুমণ্ডলের কোন স্তরের তাপমাত্রা সর্বাপেক্ষা বেশি?",
+          options: {
+            A: "ট্রপোস্ফিয়ার",
+            B: "স্ট্র্যাটোস্ফিয়ার",
+            C: "মেসোস্ফিয়ার",
+            D: "থার্মোস্ফিয়ার",
+          },
+          correct: "D",
+          explanation:
+            "<p>থার্মোস্ফিয়ার বায়ুমণ্ডলের চতুর্থ স্তর, যা মেসোস্ফিয়ারের উপরে অবস্থিত। এই স্তরে উচ্চতা বৃদ্ধির সাথে সাথে তাপমাত্রা নাটকীয়ভাবে বৃদ্ধি পায় এবং বায়ুমণ্ডলের সর্বোচ্চ তাপমাত্রায় পৌঁছাতে পারে। এটি প্রায় ৫০০ কিলোমিটার পর্যন্ত বিস্তৃত।</p>",
+        },
+        {
+          id: 9,
+          question: "বায়ুমণ্ডলের শীতলতম অঞ্চল কোনটি?",
+          options: {
+            A: "মেসোস্ফিয়ার",
+            B: "স্ট্র্যাটোস্ফিয়ার",
+            C: "ট্রপোস্ফিয়ার",
+            D: "থার্মোস্ফিয়ার",
+          },
+          correct: "A",
+          explanation:
+            "<p>মেসোস্ফিয়ার বায়ুমণ্ডলের তৃতীয় স্তর, যা স্ট্র্যাটোস্ফিয়ারের উপরে অবস্থিত। এই স্তরটি প্রায় ৫০-৮৫ কিলোমিটার পর্যন্ত বিস্তৃত। এই স্তরে উচ্চতা বাড়ার সাথে সাথে তাপমাত্রা দ্রুত কমতে থাকে এবং মেসোস্ফিয়ারের উপরিভাগে বায়ুমণ্ডলের সর্বনিম্ন তাপমাত্রা (-৯০°C এর নিচে) রেকর্ড করা হয়।</p>",
+        },
+        {
+          id: 10,
+          question: "ওজোন স্তর বায়ুমণ্ডলের কোন অঞ্চলে অবস্থিত?",
+          options: {
+            A: "ট্রপোস্ফিয়ার",
+            B: "স্ট্র্যাটোস্ফিয়ার",
+            C: "মেসোস্ফিয়ার",
+            D: "থার্মোস্ফিয়ার",
+          },
+          correct: "B",
+          explanation:
+            "<p>ওজোন স্তর মূলত স্ট্র্যাটোস্ফিয়ার অঞ্চলে অবস্থিত, যা ভূপৃষ্ঠ থেকে প্রায় ১৫-৫০ কিলোমিটার উচ্চতায় বিস্তৃত। এই স্তরের ওজোন গ্যাস সূর্যের অতিবেগুনি রশ্মি শোষণ করে পৃথিবীর জীবজগৎকে রক্ষা করে।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "সাইক্লোন তৈরি হতে সাগরের পানির তাপমাত্রা সর্বনিম্ন কত থাকতে হয়?",
+          options: {
+            A: "25°C",
+            B: "27°C",
+            C: "30°C",
+            D: "40°C",
+          },
+          correct: "B",
+          explanation:
+            "<p>ঘূর্ণিঝড় বা সাইক্লোন সৃষ্টির জন্য উষ্ণ সমুদ্রের পানির প্রয়োজন হয়। সাধারণত, সমুদ্রপৃষ্ঠের তাপমাত্রা কমপক্ষে ২৭°C (৮০°F) বা তার বেশি হতে হয়। এই উষ্ণ পানি বাষ্পীভূত হয়ে বায়ুমণ্ডলে প্রচুর পরিমাণে সুপ্ততাপ মুক্ত করে, যা ঘূর্ণিঝড়ের শক্তি যোগায়।</p>",
+        },
+        {
+          id: 12,
+          question: "মেসোস্ফিয়ারের উচ্চতা কত কি.মি. পর্যন্ত বিস্তৃত?",
+          options: {
+            A: "5-10 কি.মি",
+            B: "10-40 কি.মি",
+            C: "50-85 কি.মি",
+            D: "150-200 কি.মি",
+          },
+          correct: "C",
+          explanation:
+            "<p>মেসোস্ফিয়ার হলো বায়ুমণ্ডলের তৃতীয় স্তর। এটি স্ট্র্যাটোস্ফিয়ারের উপরে অবস্থিত এবং ভূপৃষ্ঠ থেকে প্রায় ৫০ থেকে ৮৫ কিলোমিটার পর্যন্ত বিস্তৃত। এই স্তরটি বায়ুমণ্ডলের শীতলতম অঞ্চল।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "আবহাওয়া ও জলবায়ু বায়ুমণ্ডলের কোন স্তরের সঙ্গে সংশ্লিষ্ট?",
+          options: {
+            A: "ট্রপোমণ্ডল",
+            B: "স্ট্র্যাটোমণ্ডল",
+            C: "মেসোমণ্ডল",
+            D: "তাপমণ্ডল",
+          },
+          correct: "A",
+          explanation:
+            "<p>ট্রপোমণ্ডল হলো বায়ুমণ্ডলের সর্বনিম্ন স্তর, যা ভূপৃষ্ঠ থেকে প্রায় ০-১৮ কিমি পর্যন্ত বিস্তৃত। মেঘ, বৃষ্টি, ঝড়, বজ্রপাত, ঘূর্ণিঝড় সহ আবহাওয়া ও জলবায়ুর সকল ঘটনা এই স্তরেই ঘটে থাকে।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "বায়ুমণ্ডলের স্ট্র্যাটোস্ফিয়ার এর অবস্থান ভূ-পৃষ্ঠ থেকে কত উচ্চতার পরিসরে?",
+          options: {
+            A: "0-18 কি.মি.",
+            B: "18-50 কি.মি.",
+            C: "50-85 কি.মি.",
+            D: "85-500 কি.মি.",
+          },
+          correct: "B",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ার হলো বায়ুমণ্ডলের দ্বিতীয় স্তর। এটি ট্রপোস্ফিয়ারের উপরে অবস্থিত এবং ভূপৃষ্ঠ থেকে প্রায় ১৮ থেকে ৫০ কিলোমিটার উচ্চতা পর্যন্ত বিস্তৃত। এই স্তরে ওজোন স্তর অবস্থিত যা সূর্যের ক্ষতিকর অতিবেগুনি রশ্মি শোষণ করে।</p>",
+        },
+        {
+          id: 15,
+          question: "বায়ুমণ্ডলের কোন স্তরে জেট বিমান চলাচল করে?",
+          options: {
+            A: "ট্রপোমণ্ডল",
+            B: "স্ট্র্যাটোমণ্ডল",
+            C: "মেসোমণ্ডল",
+            D: "তাপমণ্ডল",
+          },
+          correct: "B",
+          explanation:
+            "<p>স্ট্র্যাটোমণ্ডল বায়ুমণ্ডলের দ্বিতীয় স্তর, যা ট্রপোমণ্ডলের উপরে অবস্থিত। এই স্তরে বাতাসের গতিবিধি তুলনামূলকভাবে স্থিতিশীল এবং মেঘ ও আবহাওয়ার ঝামেলা কম থাকায় জেট বিমান সাধারণত এই স্তরে চলাচল করে থাকে।</p>",
+        },
+        {
+          id: 16,
+          question: "বায়ুমণ্ডলে সর্বনিম্ন ও সর্বোচ্চ তাপমাত্রা কোনটি?",
+          options: {
+            A: "-56°C, 25°C",
+            B: "-56°C, -2°C",
+            C: "-92°C, -2°C",
+            D: "-92°C, 1200°C",
+          },
+          correct: "D",
+          explanation:
+            "<p>বায়ুমণ্ডলের বিভিন্ন স্তরে তাপমাত্রা ভিন্ন হয়। সর্বনিম্ন তাপমাত্রা মেসোস্ফিয়ারে পাওয়া যায় যা প্রায় -৯২°C (-১৩৩°F) হতে পারে। অন্যদিকে, থার্মোস্ফিয়ারে তাপমাত্রা সর্বোচ্চ ১২০০°C এর উপরেও পৌঁছাতে পারে।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "বায়ুমণ্ডলের স্ট্র্যাটোমণ্ডলীয় স্তর ট্রপোমণ্ডলের ঠিক উপরে এবং এতে প্রধানত O<sub>3</sub> থাকে। এ প্রেক্ষিতে স্ট্র্যাটোমণ্ডলের কোন বৈশিষ্ট্যটি প্রযোজ্য?",
+          options: {
+            A: "জলবায়ু নিয়ন্ত্রণ করে",
+            B: "সূর্য থেকে আসা অতিবেগুনি রশ্মিকে শোষণ করে",
+            C: "তাপমাত্রা পরিবর্তন ট্রপোমণ্ডলের মত",
+            D: "গ্রীন হাউজ প্রভাব নিয়ন্ত্রণে কোন ভূমিকা নেই",
+          },
+          correct: "B",
+          explanation:
+            "<p>স্ট্র্যাটোমণ্ডলে প্রধানত ওজোন (O<sub>3</sub>) গ্যাস থাকে, যা ওজোন স্তর নামে পরিচিত। এই ওজোন স্তর সূর্যের ক্ষতিকর অতিবেগুনি রশ্মি শোষণ করে পৃথিবীতে আসতে বাধা দেয় এবং পৃথিবীকে এর বিরূপ প্রভাব থেকে রক্ষা করে।</p>",
+        },
+        {
+          id: 18,
+          question: "Stratosphere এর বিস্তার কত km?",
+          options: {
+            A: "1-15 km",
+            B: "15-40 km",
+            C: "15-50 km",
+            D: "50-85 km",
+          },
+          correct: "C",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ার হলো বায়ুমণ্ডলের দ্বিতীয় স্তর, যা ভূপৃষ্ঠ থেকে প্রায় ১৫ কিলোমিটার উচ্চতা থেকে শুরু হয়ে ৫০ কিলোমিটার পর্যন্ত বিস্তৃত। এই স্তরটি ওজোন স্তর ধারণ করে যা সূর্যের অতিবেগুনি রশ্মি শোষণ করে।</p>",
+        },
+        {
+          id: 19,
+          question: "বায়ুমণ্ডলের সর্বনিম্ন তাপমাত্রা কত?",
+          options: {
+            A: "-55°C",
+            B: "-2°C",
+            C: "-50°C",
+            D: "-93°C",
+          },
+          correct: "D",
+          explanation:
+            "<p>বায়ুমণ্ডলের শীতলতম অঞ্চল হলো মেসোস্ফিয়ার, যেখানে তাপমাত্রা সর্বনিম্ন -৯৩°C (-১৩৫°F) পর্যন্ত নেমে যেতে পারে। এই তাপমাত্রা মেসোস্ফিয়ারের উপরিভাগে, প্রায় ৮৫ কিলোমিটার উচ্চতায় রেকর্ড করা হয়।</p>",
+        },
+        {
+          id: 20,
+          question: "কোন স্থানের আবহাওয়া ও জলবায়ুকে নিয়ন্ত্রণ করে কোনটি?",
+          options: {
+            A: "স্ট্রাটোস্ফিয়ার এর বায়ুমণ্ডল",
+            B: "ট্রপোস্ফিয়ার এর বায়ুমণ্ডল",
+            C: "আয়নোস্ফিয়ার এর বায়ুমণ্ডল",
+            D: "মেসোস্ফিয়ার এর বায়ুমণ্ডল",
+          },
+          correct: "B",
+          explanation:
+            "<p>ট্রপোস্ফিয়ার হলো বায়ুমণ্ডলের সর্বনিম্ন স্তর, যা ভূপৃষ্ঠের সবচেয়ে কাছাকাছি অবস্থিত। মেঘ, বৃষ্টি, বাতাস, তাপমাত্রা এবং আর্দ্রতার মতো আবহাওয়ার সকল উপাদান এই স্তরেই বিদ্যমান। তাই একটি স্থানের আবহাওয়া ও জলবায়ু মূলত ট্রপোস্ফিয়ারের বায়ুমণ্ডল দ্বারা নিয়ন্ত্রিত হয়।</p>",
+        },
+        {
+          id: 21,
+          question: "পানির বাষ্পায়ন কিসের উপর নির্ভরশীল?",
+          options: {
+            A: "তাপমাত্রা",
+            B: "চাপ",
+            C: "তাপ ও চাপ",
+            D: "আর্দ্রতা",
+          },
+          correct: "C",
+          explanation:
+            "<p>পানির বাষ্পায়ন প্রক্রিয়া তাপমাত্রা এবং চাপ উভয় উপাদানের উপর নির্ভরশীল। তাপমাত্রা যত বেশি হয়, বাষ্পায়নের হার তত দ্রুত হয়। অন্যদিকে, চাপ যত কম হয়, বাষ্পায়নের হার তত বাড়ে। তাই তাপ ও চাপ উভয়ই বাষ্পায়নকে প্রভাবিত করে।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "সূর্যের আলোর উচ্চশক্তির বিকিরণ বায়ুমণ্ডলের কোন স্তরে শোষিত হয়?",
+          options: {
+            A: "ট্রপোস্ফিয়ার",
+            B: "থার্মোস্ফিয়ার",
+            C: "স্ট্র্যাটোস্ফিয়ার",
+            D: "এক্সোস্ফিয়ার",
+          },
+          correct: "C",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ার স্তরে ওজোন (O<sub>3</sub>) স্তর থাকে। এই ওজোন স্তর সূর্যের ক্ষতিকর অতিবেগুনি (UV) রশ্মিকে শোষণ করে, যা উচ্চশক্তির বিকিরণ হিসাবে পরিচিত। এই শোষণ পৃথিবীর জীবজগতের জন্য অত্যন্ত গুরুত্বপূর্ণ।</p>",
+        },
+        {
+          id: 23,
+          question: "পারমাণবিক অক্সিজেন বিরাজ করে বায়ুমণ্ডলের কোন স্তরে?",
+          options: {
+            A: "স্ট্র্যাটোমণ্ডল",
+            B: "মেসোমণ্ডল",
+            C: "তাপমণ্ডল",
+            D: "ট্রোপোমণ্ডল",
+          },
+          correct: "C",
+          explanation:
+            "<p>তাপমণ্ডল বা থার্মোস্ফিয়ার বায়ুমণ্ডলের একটি উচ্চ স্তর, যেখানে সূর্যের উচ্চশক্তির বিকিরণ, যেমন অতিবেগুনি রশ্মি এবং এক্স-রে, গ্যাস অণুগুলিকে আয়নিত করে। এই প্রক্রিয়ায় অণুগুলো ভেঙে পারমাণবিক অক্সিজেন (O), নাইট্রোজেন (N) ইত্যাদি রূপে বিরাজ করে।</p>",
+        },
+        {
+          id: 24,
+          question: "বায়ুমণ্ডলে কোন নিষ্ক্রিয় গ্যাস সর্বাধিক পাওয়া যায়?",
+          options: {
+            A: "He",
+            B: "Ar",
+            C: "Ne",
+            D: "Kr",
+          },
+          correct: "B",
+          explanation:
+            "<p>বায়ুমণ্ডলে প্রাপ্ত নিষ্ক্রিয় গ্যাসগুলির মধ্যে আর্গন (Ar) সর্বাধিক পরিমাণে পাওয়া যায়। বায়ুমণ্ডলের মোট আয়তনের প্রায় ০.৯৩৪% আর্গন গ্যাস বিদ্যমান, যা অন্যান্য নিষ্ক্রিয় গ্যাস যেমন হিলিয়াম, নিয়ন, ক্রিপ্টন ইত্যাদির চেয়ে বেশি।</p>",
+        },
+        {
+          id: 25,
+          question: "স্ট্র্যাটোস্ফিয়ার অঞ্চলের উষ্ণতার কারণ কোনটি?",
+          options: {
+            A: "ওজোন দ্বারা অতিবেগুনি রশ্মির শোষণ",
+            B: "অক্সিজেন দ্বারা ওজোন গঠন",
+            C: "O<sub>3</sub> এবং CHCl<sub>3</sub> এর মধ্যে সংঘটিত বিক্রিয়া",
+            D: "ঘনীভবনের প্রাক্কালে লীনতাপের অবমুক্তকরণ",
+          },
+          correct: "A",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ার স্তরে ওজোন (O<sub>3</sub>) স্তর বিদ্যমান। এই ওজোন স্তর সূর্যের অতিবেগুনি রশ্মি শোষণ করে। এই শোষণ প্রক্রিয়ার কারণে শক্তি উৎপন্ন হয়, যা স্ট্র্যাটোস্ফিয়ার অঞ্চলের তাপমাত্রা বৃদ্ধি করে এবং একে ট্রপোস্ফিয়ারের উপরে একটি উষ্ণতর স্তরে পরিণত করে।</p>",
+        },
+        {
+          id: 26,
+          question: "বায়ুমণ্ডলের কোন অঞ্চলটি ‘শান্তমণ্ডল’ নামে পরিচিত?",
+          options: {
+            A: "এক্সোস্ফিয়ার",
+            B: "স্ট্রাটোস্ফিয়ার",
+            C: "আয়োনোস্ফিয়ার",
+            D: "ট্রপোস্ফিয়ার",
+          },
+          correct: "B",
+          explanation:
+            "<p>স্ট্র্যাটোস্ফিয়ারকে ‘শান্তমণ্ডল’ বলা হয় কারণ এই স্তরে আবহাওয়ার কোনো পরিবর্তন যেমন মেঘ, বৃষ্টি, ঝড়, বজ্রপাত ইত্যাদি ঘটে না। এই স্তরের বায়ু চলাচল খুবই স্থিতিশীল থাকে, যা জেট বিমান চলাচলের জন্য আদর্শ।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "ট্রপোস্ফিয়ারে কোন গ্রিন হাউজ গ্যাসের জীবনকাল তুলনামূলক দীর্ঘ?",
+          options: {
+            A: "CO<sub>2</sub>",
+            B: "CFC",
+            C: "NO",
+            D: "N<sub>2</sub>O",
+          },
+          correct: "B",
+          explanation:
+            "<p>ট্রপোস্ফিয়ারে বিদ্যমান গ্রিনহাউস গ্যাসগুলোর মধ্যে ক্লোরোফ্লুরোকার্বন (CFC) এর জীবনকাল তুলনামূলকভাবে দীর্ঘ। CFCs বায়ুমণ্ডলে কয়েক দশক থেকে শতাব্দীকাল পর্যন্ত টিকে থাকতে পারে, যার ফলে এগুলি দীর্ঘমেয়াদী গ্রিনহাউস প্রভাব এবং ওজোন স্তর ক্ষয় সাধনে ভূমিকা রাখে।</p>",
+        },
+        {
+          id: 28,
+          question: "বায়ুমণ্ডলের ট্রেস উপাদান কোনটি?",
+          options: {
+            A: "আর্গন",
+            B: "জলীয় বাষ্প",
+            C: "CO<sub>2</sub>",
+            D: "N<sub>2</sub>O",
+          },
+          correct: "D",
+          explanation:
+            "<p>বায়ুমণ্ডলের ট্রেস উপাদান বলতে সেইসব গ্যাসকে বোঝায়, যা বায়ুমণ্ডলে খুব কম পরিমাণে উপস্থিত থাকে। আর্গন, জলীয় বাষ্প এবং কার্বন ডাই অক্সাইড বায়ুমণ্ডলের প্রধান উপাদানগুলোর মধ্যে পড়ে। কিন্তু নাইট্রাস অক্সাইড (N<sub>2</sub>O) তুলনামূলকভাবে কম পরিমাণে থাকলেও এর গ্রিনহাউস প্রভাব গুরুত্বপূর্ণ, তাই এটি একটি ট্রেস উপাদান হিসাবে বিবেচিত হয়।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                <label class="option" data-option="${option}">
+                                  <div class="circle">${option}</div>
+                                  <span class="option-text">${question.options[option]}</span>
+                                </label>
+                              `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                   <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                   <div class="explanation-content">
+                                     <div class="explanation-label">ব্যাখ্যা:</div>
+                                     ${question.explanation}
+                                   </div>
+                                 </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                              <p class="question-label">${index + 1}. ${
+            question.question
+          }</p>
+                              <div class="options">
+                                ${optionsHTML}
+                              </div>
+                              ${explanationHTML}
+                            `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
